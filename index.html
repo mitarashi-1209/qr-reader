@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f0f0f0; }
+    #reader { width: 100%; max-width: 400px; margin: 20px auto; background-color: white; }
+    #status { margin-top: 15px; font-size: 18px; font-weight: bold; padding: 10px; border-radius: 5px; }
+    .status-waiting { color: #555; }
+    .status-success { color: #fff; background-color: #28a745; }
+  </style>
+</head>
+<body>
+  <h1>QRコードリーダー</h1>
+  <div id="reader"></div>
+  <div id="status" class="status-waiting">待機中</div>
+
+  <script>
+    // ここにデプロイしたApps ScriptのURLを入れる
+    const https://script.google.com/macros/s/AKfycbxHKTLZlQ6OCwQvjscgmUOuh7uqG-fAM-M-G9yxwwOzYiOtga2PWvFuUsrgJoqp7DKg1A/exec = "https://script.google.com/macros/s/xxxxxxxxxx/exec";
+
+    const statusEl = document.getElementById("status");
+    let isProcessing = false;
+    let lastDecodedText = "";
+    const COOLDOWN_MS = 3000;
+
+    function onScanSuccess(decodedText) {
+      if (isProcessing || decodedText === lastDecodedText) return;
+
+      isProcessing = true;
+      lastDecodedText = decodedText;
+      statusEl.innerText = "読み取り完了！送信中...";
+      statusEl.className = "status-success";
+
+      fetch(GAS_URL, {
+        method: "POST",
+        body: JSON.stringify({ staff: decodedText }),
+      })
+      .then(() => console.log("送信成功"))
+      .catch((err) => alert("送信エラー: " + err));
+
+      setTimeout(() => {
+        isProcessing = false;
+        lastDecodedText = "";
+        statusEl.innerText = "待機中";
+        statusEl.className = "status-waiting";
+      }, COOLDOWN_MS);
+    }
+
+    function onScanFailure(error) {}
+
+    const html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader",
+      { fps: 10, qrbox: { width: 350, height: 350 }, rememberLastUsedCamera: true },
+      false
+    );
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+  </script>
+</body>
+</html>
