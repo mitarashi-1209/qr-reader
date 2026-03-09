@@ -8,35 +8,67 @@
   <style>
     body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f0f0f0; }
     #reader { width: 100%; max-width: 400px; margin: 20px auto; background-color: white; }
-    #reader video {
-  transform: scaleX(-1);
-}
+    #reader video { transform: scaleX(-1); }
     #status { margin-top: 15px; font-size: 18px; font-weight: bold; padding: 10px; border-radius: 5px; }
     .status-waiting { color: #555; }
     .status-success { color: #fff; background-color: #28a745; }
+    button { font-size: 18px; padding: 10px 20px; margin-top: 10px; }
   </style>
 </head>
 <body>
   <h1>QRコードリーダー</h1>
+
+  <button id="unlockBtn">🔊 音声を有効化（最初に1回押してください）</button>
+
   <div id="reader"></div>
   <div id="status" class="status-waiting">待機中</div>
 
   <script>
-    // ここにデプロイしたApps ScriptのURLを入れる
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxHKTLZlQ6OCwQvjscgmUOuh7uqG-fAM-M-G9yxwwOzYiOtga2PWvFuUsrgJoqp7DKg1A/exec";
-    
+
     const statusEl = document.getElementById("status");
     let isProcessing = false;
     let lastDecodedText = "";
     const COOLDOWN_MS = 3000;
 
+    const sounds = [
+      "https://mitarashi-1209.github.io/-/yomikomikannryou.mp3",
+      "https://mitarashi-1209.github.io/-/yomikomi_voice.mp3",
+      "https://mitarashi-1209.github.io/-/omachikudasai.mp3"
+    ];
+
+    let audioUnlocked = false;
+    document.getElementById("unlockBtn").addEventListener("click", (e) => {
+      const silent = new Audio("data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAABAAADhgD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8AAAA8TEFNRTMuMTAwBK8AAAAAAAAAABSAJAJAQgAAgAAAA4bEx3MDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAABAAAAAwCqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAABAAAA//OEwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==");
+      silent.play().then(() => {
+        sounds.forEach(url => {
+          const a = new Audio(url);
+          a.load();
+        });
+        audioUnlocked = true;
+        e.target.style.display = "none";
+      }).catch(err => {
+        console.log("unlock失敗:", err);
+      });
+    });
+
+    function playSequentially(urls, index = 0) {
+      if (index >= urls.length) return;
+      const audio = new Audio(urls[index]);
+      audio.play();
+      audio.onended = () => playSequentially(urls, index + 1);
+    }
+
     function onScanSuccess(decodedText) {
       if (isProcessing || decodedText === lastDecodedText) return;
-
       isProcessing = true;
       lastDecodedText = decodedText;
       statusEl.innerText = "読み取り完了！送信中...";
       statusEl.className = "status-success";
+
+      if (audioUnlocked) {
+        playSequentially(sounds);
+      }
 
       fetch(GAS_URL, {
         method: "POST",
