@@ -26,34 +26,40 @@
     let isProcessing = false;
     let lastDecodedText = "";
     const COOLDOWN_MS = 3000;
-    const sounds = [
+    const soundUrls = [
       "https://mitarashi-1209.github.io/-/yomikomikannryou.mp3",
       "https://mitarashi-1209.github.io/-/yomikomi_voice.mp3",
       "https://mitarashi-1209.github.io/-/omachikudasai.mp3"
     ];
+
+    let audioCtx = null;
     let audioUnlocked = false;
-    document.getElementById("unlockBtn").addEventListener("click", (e) => {
-      const first = new Audio(sounds[0]);
-      first.volume = 0.01;
-      first.play().then(() => {
-        first.pause();
-        first.currentTime = 0;
-        sounds.forEach(url => {
-          const a = new Audio(url);
-          a.load();
-        });
-        audioUnlocked = true;
-        e.target.style.display = "none";
-      }).catch(err => {
-        console.log("unlock失敗:", err);
-      });
+    let audioBuffers = [];
+
+    document.getElementById("unlockBtn").addEventListener("click", async (e) => {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      await audioCtx.resume();
+
+      // 全音声を事前にデコードしてバッファに保存
+      audioBuffers = await Promise.all(soundUrls.map(url =>
+        fetch(url)
+          .then(r => r.arrayBuffer())
+          .then(buf => audioCtx.decodeAudioData(buf))
+      ));
+
+      audioUnlocked = true;
+      e.target.style.display = "none";
     });
-    function playSequentially(urls, index = 0) {
-      if (index >= urls.length) return;
-      const audio = new Audio(urls[index]);
-      audio.play().catch(err => console.log("再生エラー:", err));
-      audio.onended = () => playSequentially(urls, index + 1);
+
+    function playSequentially(buffers, index = 0) {
+      if (index >= buffers.length) return;
+      const source = audioCtx.createBufferSource();
+      source.buffer = buffers[index];
+      source.connect(audioCtx.destination);
+      source.start(0);
+      source.onended = () => playSequentially(buffers, index + 1);
     }
+
     function onScanSuccess(decodedText) {
       if (isProcessing || decodedText === lastDecodedText) return;
       isProcessing = true;
@@ -61,7 +67,7 @@
       statusEl.innerText = "読み取り完了！送信中...";
       statusEl.className = "status-success";
       if (audioUnlocked) {
-        playSequentially(sounds);
+        playSequentially(audioBuffers);
       }
       fetch(GAS_URL, {
         method: "POST",
