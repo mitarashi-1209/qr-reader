@@ -42,7 +42,12 @@
 
     document.getElementById("unlockBtn").addEventListener("click", (e) => {
       sounds.forEach(a => {
-        a.load();
+        a.volume = 0;
+        a.play().then(() => {
+          a.pause();
+          a.currentTime = 0;
+          a.volume = 1;
+        }).catch(() => {});
       });
       audioUnlocked = true;
       e.target.style.display = "none";
@@ -54,7 +59,7 @@
       audio.currentTime = 0;
       audio.play().catch(err => console.log("再生エラー:", err));
       audio.onended = () => {
-        setTimeout(() => playSequentially(index + 1), 500);
+        setTimeout(() => playSequentially(index + 1), 200);
       };
     }
 
