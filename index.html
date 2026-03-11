@@ -21,6 +21,10 @@
   <div id="reader"></div>
   <div id="status" class="status-waiting">待機中</div>
 
+  <audio id="sound0" src="https://mitarashi-1209.github.io/-/yomikomikannryou.mp3"></audio>
+  <audio id="sound1" src="https://mitarashi-1209.github.io/-/yomikomi_voice.mp3"></audio>
+  <audio id="sound2" src="https://mitarashi-1209.github.io/-/omachikudasai.mp3"></audio>
+
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxHKTLZlQ6OCwQvjscgmUOuh7uqG-fAM-M-G9yxwwOzYiOtga2PWvFuUsrgJoqp7DKg1A/exec";
     const statusEl = document.getElementById("status");
@@ -28,18 +32,16 @@
     let lastDecodedText = "";
     const COOLDOWN_MS = 3000;
 
-    const soundUrls = [
-      "https://mitarashi-1209.github.io/-/yomikomikannryou.mp3",
-      "https://mitarashi-1209.github.io/-/yomikomi_voice.mp3",
-      "https://mitarashi-1209.github.io/-/omachikudasai.mp3"
+    const sounds = [
+      document.getElementById("sound0"),
+      document.getElementById("sound1"),
+      document.getElementById("sound2")
     ];
 
     let audioUnlocked = false;
 
     document.getElementById("unlockBtn").addEventListener("click", (e) => {
-      // 事前にロードだけしておく
-      soundUrls.forEach(url => {
-        const a = new Audio(url);
+      sounds.forEach(a => {
         a.load();
       });
       audioUnlocked = true;
@@ -47,8 +49,8 @@
     });
 
     function playSequentially(index = 0) {
-      if (index >= soundUrls.length) return;
-      const audio = new Audio(soundUrls[index]);
+      if (index >= sounds.length) return;
+      const audio = sounds[index].cloneNode();
       audio.play().catch(err => console.log("再生エラー:", err));
       audio.onended = () => playSequentially(index + 1);
     }
