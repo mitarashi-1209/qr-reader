@@ -53,7 +53,9 @@
       const audio = sounds[index];
       audio.currentTime = 0;
       audio.play().catch(err => console.log("再生エラー:", err));
-      audio.onended = () => playSequentially(index + 1);
+      audio.onended = () => {
+        setTimeout(() => playSequentially(index + 1), 500);
+      };
     }
 
     function onScanSuccess(decodedText) {
