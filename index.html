@@ -63,7 +63,7 @@
       statusEl.innerText = "読み取り完了！送信中...";
       statusEl.className = "status-success";
       if (audioUnlocked) {
-        playSequentially();
+        setTimeout(() => playSequentially(), 300);
       }
       fetch(GAS_URL, {
         method: "POST",
