@@ -20,44 +20,42 @@
   <button id="unlockBtn">🔊 音声を有効化（最初に1回押してください）</button>
   <div id="reader"></div>
   <div id="status" class="status-waiting">待機中</div>
+
+  <audio id="sound0" src="https://mitarashi-1209.github.io/-/yomikomikannryou.mp3"></audio>
+  <audio id="sound1" src="https://mitarashi-1209.github.io/-/yomikomi_voice.mp3"></audio>
+  <audio id="sound2" src="https://mitarashi-1209.github.io/-/omachikudasai.mp3"></audio>
+
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxHKTLZlQ6OCwQvjscgmUOuh7uqG-fAM-M-G9yxwwOzYiOtga2PWvFuUsrgJoqp7DKg1A/exec";
     const statusEl = document.getElementById("status");
     let isProcessing = false;
     let lastDecodedText = "";
     const COOLDOWN_MS = 3000;
-    const soundUrls = [
-      "https://mitarashi-1209.github.io/-/yomikomikannryou.mp3",
-      "https://mitarashi-1209.github.io/-/yomikomi_voice.mp3",
-      "https://mitarashi-1209.github.io/-/omachikudasai.mp3"
+
+    const sounds = [
+      document.getElementById("sound0"),
+      document.getElementById("sound1"),
+      document.getElementById("sound2")
     ];
 
-    let audioCtx = null;
     let audioUnlocked = false;
-    let audioBuffers = [];
 
-    document.getElementById("unlockBtn").addEventListener("click", async (e) => {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      await audioCtx.resume();
-
-      // 全音声を事前にデコードしてバッファに保存
-      audioBuffers = await Promise.all(soundUrls.map(url =>
-        fetch(url)
-          .then(r => r.arrayBuffer())
-          .then(buf => audioCtx.decodeAudioData(buf))
-      ));
-
+    document.getElementById("unlockBtn").addEventListener("click", (e) => {
+      // ボタンを押した瞬間に全音声をロードしてアンロック
+      sounds.forEach(a => {
+        a.load();
+        a.play().then(() => a.pause()).catch(() => {});
+      });
       audioUnlocked = true;
       e.target.style.display = "none";
     });
 
-    function playSequentially(buffers, index = 0) {
-      if (index >= buffers.length) return;
-      const source = audioCtx.createBufferSource();
-      source.buffer = buffers[index];
-      source.connect(audioCtx.destination);
-      source.start(0);
-      source.onended = () => playSequentially(buffers, index + 1);
+    function playSequentially(index = 0) {
+      if (index >= sounds.length) return;
+      const audio = sounds[index];
+      audio.currentTime = 0;
+      audio.play().catch(err => console.log("再生エラー:", err));
+      audio.onended = () => playSequentially(index + 1);
     }
 
     function onScanSuccess(decodedText) {
@@ -67,7 +65,7 @@
       statusEl.innerText = "読み取り完了！送信中...";
       statusEl.className = "status-success";
       if (audioUnlocked) {
-        playSequentially(audioBuffers);
+        playSequentially();
       }
       fetch(GAS_URL, {
         method: "POST",
@@ -84,7 +82,9 @@
         statusEl.className = "status-waiting";
       }, COOLDOWN_MS);
     }
+
     function onScanFailure(error) {}
+
     const html5QrcodeScanner = new Html5QrcodeScanner(
       "reader",
       { fps: 10, qrbox: { width: 350, height: 350 }, rememberLastUsedCamera: true },
