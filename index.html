@@ -33,12 +33,20 @@
     ];
     let audioUnlocked = false;
     document.getElementById("unlockBtn").addEventListener("click", (e) => {
-      sounds.forEach(url => {
-        const a = new Audio(url);
-        a.load();
+      const first = new Audio(sounds[0]);
+      first.volume = 0.01;
+      first.play().then(() => {
+        first.pause();
+        first.currentTime = 0;
+        sounds.forEach(url => {
+          const a = new Audio(url);
+          a.load();
+        });
+        audioUnlocked = true;
+        e.target.style.display = "none";
+      }).catch(err => {
+        console.log("unlock失敗:", err);
       });
-      audioUnlocked = true;
-      e.target.style.display = "none";
     });
     function playSequentially(urls, index = 0) {
       if (index >= urls.length) return;
