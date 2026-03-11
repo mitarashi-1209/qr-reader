@@ -42,12 +42,7 @@
 
     document.getElementById("unlockBtn").addEventListener("click", (e) => {
       sounds.forEach(a => {
-        a.volume = 0;
-        a.play().then(() => {
-          a.pause();
-          a.currentTime = 0;
-          a.volume = 1;
-        }).catch(() => {});
+        a.load();
       });
       audioUnlocked = true;
       e.target.style.display = "none";
