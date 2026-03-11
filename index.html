@@ -38,14 +38,12 @@
         a.load();
       });
       audioUnlocked = true;
-      alert("アンロック完了: " + audioUnlocked);
       e.target.style.display = "none";
     });
     function playSequentially(urls, index = 0) {
       if (index >= urls.length) return;
-      alert("再生試行: " + urls[index]);
       const audio = new Audio(urls[index]);
-      audio.play().catch(err => alert("エラー: " + err));
+      audio.play().catch(err => console.log("再生エラー:", err));
       audio.onended = () => playSequentially(urls, index + 1);
     }
     function onScanSuccess(decodedText) {
@@ -59,10 +57,12 @@
       }
       fetch(GAS_URL, {
         method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ staff: decodedText }),
       })
       .then(() => console.log("送信成功"))
-      .catch((err) => alert("送信エラー: " + err));
+      .catch((err) => console.log("送信エラー:", err));
       setTimeout(() => {
         isProcessing = false;
         lastDecodedText = "";
