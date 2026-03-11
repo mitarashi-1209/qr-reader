@@ -53,11 +53,12 @@
     });
 
     function playSequentially(urls, index = 0) {
-      if (index >= urls.length) return;
-      const audio = new Audio(urls[index]);
-      audio.play();
-      audio.onended = () => playSequentially(urls, index + 1);
-    }
+  if (index >= urls.length) return;
+  alert("再生試行: " + urls[index]); // デバッグ用
+  const audio = new Audio(urls[index]);
+  audio.play().catch(err => alert("エラー: " + err));
+  audio.onended = () => playSequentially(urls, index + 1);
+}
 
     function onScanSuccess(decodedText) {
       if (isProcessing || decodedText === lastDecodedText) return;
